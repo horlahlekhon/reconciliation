@@ -1,0 +1,7 @@
+customer_id,transaction_id,amount,transaction_date,transaction_type,status,email
+CUST001,TXN1001,150.50,2024-01-15,credit,completed,john.doe@email.com
+CUST002,TXN1002,75.25,2024-01-16,debit,completed,jane.smith@email.com
+CUST003,TXN1003,200.00,2024-01-17,credit,pending,bob.wilson@email.com
+CUST004,TXN1004,89.99,2024-01-18,debit,completed,alice.brown@email.com
+CUST005,TXN1005,320.75,2024-01-19,credit,completed,charlie.davis@email.com
+CUST006,TXN1006,55.00,2024-01-20,debit,completed,diana.lee@email.com
