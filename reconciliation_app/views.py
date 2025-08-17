@@ -9,7 +9,6 @@ from django.db.models import Count
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-# Use specialized API logger
 logger = logging.getLogger('reconciliation_app.api')
 from .models import ReconciliationJob, Ruleset, ReconciliationResult
 from .serializers import (
@@ -26,23 +25,19 @@ from .queue_manager import job_manager
 def save_csv_files_to_job_directory(job, source_file, target_file):
     """Save CSV files to job-specific directory"""
     try:
-        # Create job directory
         job_dir = job.get_job_directory()
         os.makedirs(job_dir, exist_ok=True)
         
-        # Save source file
         source_path = job.get_source_file_path()
         with open(source_path, 'wb') as f:
             for chunk in source_file.chunks():
                 f.write(chunk)
         
-        # Save target file
         target_path = job.get_target_file_path()
         with open(target_path, 'wb') as f:
             for chunk in target_file.chunks():
                 f.write(chunk)
         
-        # Update job with file paths
         job.source_file_path = source_path
         job.target_file_path = target_path
         job.save()
@@ -102,7 +97,6 @@ class ReconcileCSVFilesView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Get ruleset
         try:
             ruleset = Ruleset.objects.get(id=ruleset_id)
             logger.debug(f"Using ruleset: {ruleset.name}")

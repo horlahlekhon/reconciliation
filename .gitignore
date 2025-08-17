@@ -167,3 +167,4 @@ staticfiles/
 static/
 
 db.sqlite3
+reconciliation/jobs/*
