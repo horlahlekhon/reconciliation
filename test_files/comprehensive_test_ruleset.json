@@ -1,0 +1,67 @@
+{
+  "name": "Comprehensive Transaction Reconciliation Ruleset",
+  "description": "Ruleset for testing various data format normalizations including numbers, emails, phones, dates, and booleans",
+  "match_key": "transaction_id",
+  "fields": [
+    {
+      "field_name": "transaction_id",
+      "data_type": "string",
+      "is_required": true,
+      "description": "Unique transaction identifier"
+    },
+    {
+      "field_name": "customer_email",
+      "data_type": "email",
+      "is_required": true,
+      "description": "Customer email address with case sensitivity normalization"
+    },
+    {
+      "field_name": "customer_phone",
+      "data_type": "phone",
+      "is_required": true,
+      "description": "Customer phone number with international format normalization"
+    },
+    {
+      "field_name": "transaction_amount",
+      "data_type": "float",
+      "is_required": true,
+      "description": "Transaction amount with currency symbol and locale format normalization"
+    },
+    {
+      "field_name": "transaction_fee",
+      "data_type": "float",
+      "is_required": false,
+      "description": "Transaction fee with various number formatting"
+    },
+    {
+      "field_name": "balance",
+      "data_type": "float",
+      "is_required": true,
+      "description": "Account balance with different thousands separators"
+    },
+    {
+      "field_name": "transaction_date",
+      "data_type": "date",
+      "is_required": true,
+      "description": "Transaction date with multiple date formats"
+    },
+    {
+      "field_name": "is_verified",
+      "data_type": "boolean",
+      "is_required": true,
+      "description": "Verification status with various boolean representations"
+    },
+    {
+      "field_name": "customer_url",
+      "data_type": "url",
+      "is_required": false,
+      "description": "Customer website URL"
+    },
+    {
+      "field_name": "description",
+      "data_type": "string",
+      "is_required": false,
+      "description": "Transaction description with whitespace normalization"
+    }
+  ]
+}

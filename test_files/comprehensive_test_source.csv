@@ -1,0 +1,9 @@
+transaction_id,customer_email,customer_phone,transaction_amount,transaction_fee,balance,transaction_date,is_verified,customer_url,description
+TXN001,john.doe@example.com,+1-555-123-4567,"$1,234.56",25.50,"€10,000.00",2024-01-15,TRUE,https://customer.example.com,Payment for services
+TXN002,JANE.SMITH@COMPANY.COM,  (555) 987-6543  ,"1,500.00","$50.00","15,500.75",15/01/2024,1,http://jane-portfolio.com,Refund transaction
+TXN003,bob.wilson@email.org,+44 20 7946 0958,2.5e3,75,"£25,000.50",2024-01-15T10:30:00,yes,https://bobwilson.co.uk,  Large payment with scientific notation
+TXN004,alice.brown@test.co.uk,(+1) 555-111-2222,"  €2,345.67  ","100,00","30,000",01/15/2024,TRUE,https://alice.example.org,European number formatting
+TXN005,charlie.green@startup.io,1-800-CALL-NOW,"12,345",0.0,"12,345.00",2024-01-15 14:45:30,Y,http://startup.io/charlie,  Zero fee transaction
+TXN006,diana.white@corp.com,+33 1 23 45 67 89,"1.234.567,89","2.500,50","€1.500.000,75",2024/01/15,true,https://corp.com/diana,French/German number format
+TXN007,eve.black@finance.net,555.123.4567 x789,$987.65,"$12.34","1,000,000.01",15-01-2024,FALSE,https://finance.net/profiles/eve,Extension in phone number
+TXN010,henry.red@bank.swiss,0041 44 123 45 67,CHF 5.000,CHF 250.50,"CHF 25,000.00",2024-01-15,0,https://bank.swiss/henry,Swiss formatting

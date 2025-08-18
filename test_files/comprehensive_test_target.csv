@@ -1,0 +1,9 @@
+transaction_id,customer_email,customer_phone,transaction_amount,transaction_fee,balance,transaction_date,is_verified,customer_url,description
+TXN001,John.Doe@Example.com,15551234567,1234.56,"  25.50  ",10000.00,2024-01-15,true,https://customer.example.com,  Payment for services
+TXN002,jane.smith@company.com,5559876543,1500.00,50.00,15500.75,2024-01-15,yes,http://jane-portfolio.com,Refund transaction
+TXN003,BOB.WILSON@EMAIL.ORG,442079460958,"2,500.00","  75  ",25000.50,2024-01-15T10:30:00,1,https://bobwilson.co.uk,Large payment with scientific notation
+TXN004,Alice.Brown@Test.Co.UK,15551112222,2345.67,100.00,"30,000.00",2024-01-15,1,https://alice.example.org,European number formatting
+TXN005,CHARLIE.GREEN@STARTUP.IO,18002255669,"12,345.00",0,"$12,345",2024-01-15T14:45:30,true,http://startup.io/charlie,Zero fee transaction
+TXN006,diana.white@corp.com,33123456789,1234567.89,2500.50,1500000.75,2024-01-15,TRUE,https://corp.com/diana,French/German number format
+TXN007,Eve.Black@Finance.Net,5551234567,987.65,12.34,1000000.01,2024-01-15,false,https://finance.net/profiles/eve,Extension in phone number
+TXN010,Henry.Red@Bank.Swiss,41441234567,5000.00,250.50,25000.00,2024-01-15,no,https://bank.swiss/henry,Swiss formatting
