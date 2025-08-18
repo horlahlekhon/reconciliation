@@ -182,7 +182,7 @@ class RulesetSerializer(serializers.ModelSerializer):
         ruleset = Ruleset.objects.create(**validated_data)
         
         for field_data in fields_data:
-            if field_data.get("data_type") not in ['string', 'integer', 'float', 'boolean', 'date', 'datetime', 'email', 'url']:
+            if field_data.get("data_type") not in ['string', 'integer', 'float', 'boolean', 'date', 'datetime', 'email', 'url', "phone"]:
                 raise serializers.ValidationError(f"Invalid data type: {field_data['data_type']}")
             RulesetField.objects.create(ruleset=ruleset, **field_data)
         

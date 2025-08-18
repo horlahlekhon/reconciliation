@@ -31,6 +31,7 @@ class RulesetField(models.Model):
         ('date', 'Date'),
         ('datetime', 'DateTime'),
         ('email', 'Email'),
+        ('phone', 'Phone'),
         ('url', 'URL'),
     ]
     
