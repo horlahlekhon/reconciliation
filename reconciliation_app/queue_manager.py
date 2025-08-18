@@ -121,7 +121,7 @@ class JobProcessor:
             logger.debug(f"Saving results for job {job_id}")
             self._save_results(job, results)
             
-            summary = self.reconciliation_engine.calculate_summary(job, results)
+            summary = self.reconciliation_engine.summary(job, results)
             job.result_summary = summary
             job.save()
             

@@ -129,11 +129,9 @@ class ReconcileCSVFilesView(APIView):
                        f"Source: {validation_result['source_count']} records, "
                        f"Target: {validation_result['target_count']} records")
             
-            # Save files to job directory
             save_csv_files_to_job_directory(job, source_file, target_file)
             logger.debug(f"Saved CSV files for job {job.id}")
             
-            # Submit job to queue
             if job_manager.submit_job(job.id):
                 logger.info(f"Job {job.id} successfully queued for processing")
                 response_data = {
@@ -145,7 +143,6 @@ class ReconcileCSVFilesView(APIView):
                     'target_record_count': job.target_record_count,
                     'validation': validation_result['validation'],
                     'message': 'Job queued for processing',
-                    'queue_status': job_manager.get_queue_status()
                 }
                 return Response(response_data, status=status.HTTP_201_CREATED)
             else:
