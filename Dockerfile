@@ -16,6 +16,10 @@ COPY . /app/
 
 RUN mkdir -p /app/media/reconciliation/jobs
 
+RUN mkdir -p /app/static
+
+RUN mkdir -p /app/staticfiles
+
 RUN python manage.py collectstatic --noinput
 
 RUN adduser --disabled-password --gecos '' user

@@ -6,8 +6,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+#      - .:/app
       - media_volume:/app/media
+      - ./logs:/app/logs
     environment:
       - DEBUG=1
       - DJANGO_SETTINGS_MODULE=reconciliation.settings
