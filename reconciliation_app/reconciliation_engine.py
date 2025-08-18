@@ -1,8 +1,10 @@
-import re
 import logging
-from typing import List, Dict, Any, Tuple, Optional
+import re
 from datetime import datetime
-from collections.abc import Callable
+from typing import List, Dict, Any, Tuple, Optional
+
+from price_parser import Price
+
 from .models import ReconciliationJob
 
 logger = logging.getLogger('reconciliation_app.reconciliation')
@@ -13,18 +15,19 @@ PHONE_PATTERN = r'^[\+]?[1-9]?[\d\s\-\(\)\.]{7,15}$'
 
 DATE_FORMATS = [
     '%Y-%m-%d',
+    '%Y/%m/%d',
     '%m/%d/%Y',
     '%d/%m/%Y',
     '%d-%-m-%Y',
     '%Y%m%d',
     '%d.%m.%Y',
-]
-
-DATETIME_FORMATS = [
-    '%Y-%m-%d %H:%M:%S', 
-    '%Y-%m-%dT%H:%M:%S', 
+    '%d-%m-%Y',
+    '%Y-%m-%d %H:%M:%S',
+    '%d-%m-%Y %H:%M:%S',
+    '%Y-%m-%dT%H:%M:%S',
     '%Y-%m-%d %H:%M:%S.%f'
 ]
+
 
 BOOLEAN_OPTIONS = ['true', 'false', '1', '0', 'yes', 'no']
 
@@ -33,20 +36,19 @@ class ReconciliationEngine:
     def __init__(self):
         self.logger = logger
     
-    def normalize_number_field(self, value: str) -> str:
+    def normalize_number_field(self, value: str, field_type: str = 'float') -> float | int | str:
         """
-        Normalize numeric fields to handle different formatting conventions.
-        - we first removed the currency notations
-        - then return the value if there is scientific notation
-        - we then try to detect comma vs dot separators, since some locale actually uses commas for dot in numbers
-
+        Normalize numeric fields to handle different formatting conventions and return actual numeric values.
+        - Remove currency notations
+        - Handle scientific notation, decimal notation, and locale-specific separators
+        - Return actual numeric type (int/float) for consistent comparison
         
         Args:
             value: The string value to normalize
             field_type: The type of field ('integer', 'float')
         
         Returns:
-            Normalized numeric string value
+            Normalized numeric value as int, float, or original string if not numeric
         """
         if not value or not isinstance(value, str):
             return value
@@ -56,26 +58,56 @@ class ReconciliationEngine:
         if not normalized:
             return normalized
         
-        normalized = re.sub(r'[$£€¥₹₽¢₩₪₨₦₡%]', '', normalized)
-        if re.match(r'^[+-]?\d+\.?\d*[eE][+-]?\d+$', normalized):
-            return normalized
-        if ',' in normalized and '.' in normalized:
-            last_comma = normalized.rfind(',')
-            last_period = normalized.rfind('.')
+        try:
+            price = Price.fromstring(normalized)
+            if price.amount is not None:
+                if field_type == 'integer':
+                    return int(price.amount)
+                else:
+                    return float(price.amount)
+        except (ValueError, AttributeError):
+            pass
+        
+        try:
+            fallback = re.sub(r'[$£€¥₹₽¢₩₪₨₦₡%]', '', normalized)
+            fallback = fallback.replace(' ', '')
             
-            if last_period > last_comma:
-                # the commas is thousands separator and the . is decimal separator
-                normalized = normalized.replace(',', '')
+            if field_type == 'integer':
+                return int(float(fallback))
             else:
-                # the comma is decimal separator
-                normalized = normalized.replace('.', '').replace(',', '.')
-        elif ',' in normalized:
-            # TODO this wont work well as it wont handle cases where commas are used for decimal separator and also as thousand separator
-            normalized = normalized.replace(',', '')
-        normalized = normalized.replace(' ', '')
-        return normalized
+                return float(fallback)
+        except (ValueError, OverflowError):
+            return normalized
 
-    def normalize_string_field(self, value: str, field_type: str = 'string') -> str:
+
+    def normalize_boolean(self, value: str) -> Optional[bool]:
+        if not value:
+            return None
+        
+        normalized = str(value).strip().lower()
+        
+        true_values = {
+            'true', 't', 'yes', 'y', '1', 'on', 'enable', 'enabled', 
+            'active', 'positive', 'ok', 'okay', 'correct', 'right',
+            'valid', 'good', 'success', 'pass', 'passed', 'approve', 
+            'approved', 'accept', 'accepted', 'confirm', 'confirmed'
+        }
+        
+        false_values = {
+            'false', 'f', 'no', 'n', '0', 'off', 'disable', 'disabled',
+            'inactive', 'negative', 'wrong', 'incorrect', 'invalid', 
+            'bad', 'fail', 'failed', 'failure', 'error', 'reject', 
+            'rejected', 'deny', 'denied', 'cancel', 'cancelled'
+        }
+        
+        if normalized in true_values:
+            return True
+        elif normalized in false_values:
+            return False
+        else:
+            return None
+
+    def normalize_string_field(self, value: str, field_type: str = 'string') -> Any:
         """
         Normalize string fields for comparison. We convert everything to lower case and remove
         trailing and leading whitespaces including non visible special characters like \r
@@ -92,34 +124,41 @@ class ReconciliationEngine:
         
         # Handle numeric types with special normalization
         if field_type in ['integer', 'float']:
-            return self.normalize_number_field(value)
+            return self.normalize_number_field(value, field_type)
         
         normalized = value.replace('\n', ' ').replace('\r', '').lower().strip()
         
         if field_type == 'email':
             return normalized
         elif field_type == 'phone':
-            # Remove spaces, dashes, parentheses, dots, and plus signs for comparison
             normalized = re.sub(r'[\s\-\(\)\.\+]+', '', normalized)
             return normalized
+        elif field_type in ['date', 'datetime']:
+            _, _, date = self.validate_datetime(value, field_type)
+            return date
+        elif field_type == 'boolean':
+            return self.normalize_boolean(value)
         else:
             normalized = re.sub(r'\s+', ' ', normalized)
             return normalized
 
-    def validate_datetime(self, date: str, formats: List[str], formatter: Callable) -> Tuple[bool, str]:
+    def validate_datetime(self, date: str | datetime, data_type: str) -> Tuple[bool, str, datetime]:
         """Validate datetime against multiple formats"""
+        if isinstance(date, datetime):
+            return True, "", date
         parsed = False
-        for fmt in formats:
+        value = None
+        for fmt in DATE_FORMATS:
             try:
-                formatter(date.strip(), fmt)
+                value = datetime.strptime(date, fmt)
                 parsed = True
                 break
             except ValueError:
                 continue
         
         if not parsed:
-            return parsed, f"Invalid datetime format '{date}'"
-        return parsed, ""
+            return parsed, f"Invalid datetime format '{date}'", value
+        return parsed, "", value
 
     def validate_field_value(self, value: Any, data_type: str) -> Optional[str]:
         """
@@ -137,11 +176,9 @@ class ReconciliationEngine:
         if not value:
             return None
         
-        # Convert to string and strip if not already done
         if isinstance(value, str):
             value = value.strip()
         
-        # Handle empty strings after stripping
         if not value:
             return None
         
@@ -151,17 +188,16 @@ class ReconciliationEngine:
             elif data_type == 'float':
                 float(value)
             elif data_type == 'boolean':
-                if isinstance(value, str) and value.lower() not in BOOLEAN_OPTIONS:
-                    return f"Invalid boolean value '{value}'"
+                if value is None:
+                    return f"Invalid boolean '{value}'"
             elif data_type in ['date', 'datetime']:
-                parsed, error = self.validate_datetime(value, DATE_FORMATS, datetime.strptime)
+                parsed, error, _ = self.validate_datetime(value, data_type)
                 if not parsed:
                     return error
             elif data_type == 'email':
                 if not re.match(EMAIL_PATTERN, value):
                     return f"Invalid email format '{value}'"
             elif data_type == 'phone':
-                # For normalized phone numbers, check if digits only
                 if not re.match(r'^\d+$', value):
                     return f"Invalid phone format '{value}' (should contain only digits after normalization)"
             elif data_type == 'url':
@@ -174,7 +210,7 @@ class ReconciliationEngine:
         
         return None
 
-    def validate_csv_data(self, job: ReconciliationJob, source_data: List[Dict], target_data: List[Dict]) -> List[str]:
+    def validate_csv_data(self, job: ReconciliationJob, source_data: List[Dict], target_data: List[Dict]) -> List[Dict[str, str]]:
         """
         Validate CSV data against ruleset definitions with value normalization.
         Limits errors to 100 to prevent too much output.
@@ -196,7 +232,6 @@ class ReconciliationEngine:
         field_type_map = {field.field_name: field.data_type for field in job.ruleset.fields.all()}
         error_count = 0
         
-        # Validate source data with normalization
         for i, row in enumerate(source_data, 1):
             if error_count >= 100:
                 validation_errors.append("... and more errors (showing first 100)")
@@ -206,7 +241,6 @@ class ReconciliationEngine:
                 if field_name in field_type_map:
                     data_type = field_type_map[field_name]
                     
-                    # Normalize value before validation
                     if value and isinstance(value, str):
                         normalized_value = self.normalize_string_field(value, data_type)
                     else:
@@ -214,7 +248,15 @@ class ReconciliationEngine:
                     
                     error = self.validate_field_value(normalized_value, data_type)
                     if error:
-                        validation_errors.append(f"Source row {i}, field '{field_name}': {error} (original: '{value}')")
+                        d = {
+                            "row": i,
+                            "field": field_name,
+                            "error": error,
+                            "original_value": value,
+                            "normalized_value": normalized_value,
+                            "where": "source file"
+                        }
+                        validation_errors.append(d)
                         error_count += 1
                         if error_count >= 100:
                             break
@@ -236,7 +278,15 @@ class ReconciliationEngine:
                     
                     error = self.validate_field_value(normalized_value, data_type)
                     if error:
-                        validation_errors.append(f"Target row {i}, field '{field_name}': {error} (original: '{value}')")
+                        d = {
+                            "row": i,
+                            "field": field_name,
+                            "error": error,
+                            "original_value": value,
+                            "normalized_value": normalized_value,
+                            "where": "target file"
+                        }
+                        validation_errors.append(d)
                         error_count += 1
                         if error_count >= 100:
                             break
@@ -249,7 +299,7 @@ class ReconciliationEngine:
             return {}
         return {field.field_name: field.data_type for field in job.ruleset.fields.all()}
 
-    def normalize_value_for_comparison(self, value: str, field_name: str, field_type_map: Dict[str, str]) -> str:
+    def normalize_value_for_comparison(self, value: str, field_name: str, field_type_map: Dict[str, str]) -> str | datetime:
         """Normalize value based on field type"""
         if not value or not isinstance(value, str):
             return value

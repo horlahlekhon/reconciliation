@@ -70,7 +70,7 @@ class ReconciliationJob(models.Model):
     source_record_count = models.IntegerField(null=True, blank=True)
     target_record_count = models.IntegerField(null=True, blank=True)
     result_summary = models.JSONField(null=True, blank=True)
-    error_message = models.TextField(null=True, blank=True)
+    error_message = models.JSONField(null=True, blank=True)
     
     def get_job_directory(self):
         return os.path.join(settings.MEDIA_ROOT, 'reconciliation', 'jobs', str(self.id))

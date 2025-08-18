@@ -6,6 +6,8 @@ import threading
 import time
 import logging
 from typing import Optional
+
+from .exceptions import DataValidationError
 from .models import ReconciliationJob, ReconciliationResult
 from datetime import datetime
 from .reconciliation_engine import ReconciliationEngine
@@ -111,7 +113,7 @@ class JobProcessor:
             validation_errors = self.reconciliation_engine.validate_csv_data(job, source_data, target_data)
             if validation_errors:
                 logger.error(f"Job {job_id} validation failed with {len(validation_errors)} errors")
-                raise ValueError(f"Data validation failed: {'; '.join(validation_errors)}")
+                raise DataValidationError(message=f"Data validation failed", errors=validation_errors)
             
             logger.debug(f"Job {job_id} data validation passed")
             
@@ -134,13 +136,23 @@ class JobProcessor:
             
         except ReconciliationJob.DoesNotExist:
             logger.error(f"Job {job_id} not found in database")
+        except DataValidationError as e:
+            logger.error(f"Job {job_id} validation failed: {e}")
+            try:
+                job = ReconciliationJob.objects.get(id=job_id)
+                job.status = 'failed'
+                job.error_message = e.errors
+                job.save()
+                logger.debug(f"Job {job_id} status updated to 'failed'")
+            except Exception as save_error:
+                logger.error(f"Failed to update job {job_id} status to failed: {save_error}")
         except Exception as e:
             processing_time = (datetime.now() - start_time).total_seconds()
             logger.error(f"Job {job_id} failed after {processing_time:.2f} seconds: {e}")
             try:
                 job = ReconciliationJob.objects.get(id=job_id)
                 job.status = 'failed'
-                job.error_message = str(e)
+                job.error_message = [{"error": str(e)}]
                 job.save()
                 logger.debug(f"Job {job_id} status updated to 'failed'")
             except Exception as save_error:
