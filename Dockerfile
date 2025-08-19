@@ -20,6 +20,10 @@ RUN mkdir -p /app/static
 
 RUN mkdir -p /app/staticfiles
 
+RUN mkdir -p /app/logs
+
+RUN touch /app/logs/reconciliation.log
+
 RUN python manage.py collectstatic --noinput
 
 RUN adduser --disabled-password --gecos '' user
