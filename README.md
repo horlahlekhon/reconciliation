@@ -4,6 +4,8 @@ Django REST API for comparing CSV files with asynchronous processing.
 
 ## Quick Start
 
+### Option 1
+
 ### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
@@ -18,6 +20,13 @@ python manage.py migrate
 ```bash
 python manage.py runserver
 ```
+
+### Option 2
+
+```bash
+   docker compose up -d
+```
+
 
 Server runs at `http://127.0.0.1:8000/`
 
